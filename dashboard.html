@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IK Dashboard | Akıllı ATS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Header & Layout --- */
+        header {
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        main {
+            padding: 2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 10px 20px -10px var(--primary); }
+        
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: var(--glass); border-color: var(--text-muted); }
+
+        .btn-danger { background: var(--accent-red); color: white; }
+        .btn-success { background: var(--accent-green); color: white; }
+
+        /* --- Positions Grid --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .pos-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pos-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .pos-card h3 { margin-bottom: 0.5rem; font-size: 1.25rem; }
+        .pos-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+        .pos-card .meta { display: flex; gap: 1rem; font-size: 0.85rem; color: var(--primary); font-weight: 600; }
+        
+        .delete-pos-btn {
+            color: var(--accent-red);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+        }
+        .delete-pos-btn:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        /* --- Detail View --- */
+        .detail-view { display: none; }
+        .detail-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+        
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--glass);
+            padding: 0.5rem;
+            border-radius: 15px;
+            width: fit-content;
+        }
+
+        .tab {
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .tab.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* --- Candidate Card --- */
+        .candidate-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .cand-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .score-badge {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: var(--glass);
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        .cand-name { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .cand-info { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+        
+        .cand-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .skill-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 0.3rem 0.7rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .cand-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn-full { grid-column: span 2; }
+
+        .cand-details {
+            border-top: 1px solid var(--border);
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .cand-detail-item {
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4rem;
+        }
+
+        .cand-detail-item strong {
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .cand-detail-item span {
+            color: var(--text-main);
+        }
+
+        /* --- Modal --- */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; }
+        input, textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.75rem;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        select {
+            background: var(--card-bg);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate { animation: fadeIn 0.4s ease forwards; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Akıllı ATS Dashboard</div>
+        <div class="user-info" style="display:flex; align-items:center; gap: 1rem;">
+            <button class="btn btn-primary" onclick="showModal()">+ Pozisyon Ekle</button>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <!-- Home View -->
+        <div id="home-view" class="animate">
+            <h1 style="margin-bottom: 0.5rem;">Aktif Pozisyonlar</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Şirketinizdeki açık ilanları ve başvuru durumlarını buradan takip edebilirsiniz.</p>
+            
+            <div class="grid" id="positions-grid">
+                <!-- Positions will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Detail View -->
+        <div id="detail-view" class="detail-view animate">
+            <div class="detail-header">
+                <button class="btn btn-outline" onclick="showHome()">← Geri</button>
+                <h1 id="current-pos-title">Pozisyon Detayı</h1>
+            </div>
+
+            <div class="controls">
+                <label>Sıralama:</label>
+                <select id="sort-select" onchange="loadCandidates()">
+                    <option value="score">Eşleşme Oranı (Yüksekten)</option>
+                    <option value="date">Başvuru Tarihi (Yeni)</option>
+                </select>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('Beklemede', this)">Yeni Başvurular</div>
+                <div class="tab" onclick="switchTab('Kabul Edildi', this)">Kabul Edilenler</div>
+            </div>
+
+            <div class="candidate-list" id="candidate-list">
+                <!-- Candidates will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Pozisyon Ekle -->
+    <div class="modal" id="pos-modal">
+        <div class="modal-content animate">
+            <h2 style="margin-bottom: 1.5rem;">Yeni Pozisyon Oluştur</h2>
+            <div class="form-group">
+                <label>Pozisyon Başlığı</label>
+                <input type="text" id="pos-title" placeholder="Örn: Kıdemli Python Geliştirici">
+            </div>
+            <div class="form-group">
+                <label>Gerekli Yetenekler (Virgülle ayırın)</label>
+                <textarea id="pos-skills" rows="3" placeholder="Python, Django, PostgreSQL, Docker"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Kontenjan</label>
+                <input type="number" id="pos-quota" value="1">
+            </div>
+            <div style="display:flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-outline" onclick="hideModal()">İptal</button>
+                <button class="btn btn-primary" onclick="addPosition()">Pozisyonu Yayınla</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        let currentPosition = null;
+        let currentStatusTab = "Beklemede";
+
+        // Navigation
+        function showHome() {
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('detail-view').style.display = 'none';
+            loadPositions();
+        }
+
+        function showDetail(posTitle) {
+            currentPosition = posTitle;
+            document.getElementById('current-pos-title').innerText = posTitle;
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'block';
+            loadCandidates();
+        }
+
+        function switchTab(status, el) {
+            currentStatusTab = status;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            loadCandidates();
+        }
+
+        // Modal
+        function showModal() { document.getElementById('pos-modal').style.display = 'flex'; }
+        function hideModal() { document.getElementById('pos-modal').style.display = 'none'; }
+
+        // API Calls
+        async function loadPositions() {
+            try {
+                const res = await fetch(`${API_URL}/positions/`);
+                const data = await res.json();
+                const grid = document.getElementById('positions-grid');
+                grid.innerHTML = "";
+
+                data.data.forEach(pos => {
+                    const card = document.createElement('div');
+                    card.className = 'pos-card animate';
+                    card.onclick = () => showDetail(pos.title);
+                    card.innerHTML = `
+                        <h3>${pos.title}</h3>
+                        <p>${pos.required_skills.split(',').slice(0, 4).join(', ')}...</p>
+                        <div class="meta" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <span>👥 Kontenjan: ${pos.quota}</span>
+                            <span class="delete-pos-btn" onclick="deletePosition(event, ${pos.id})">🗑️ Sil</span>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function deletePosition(event, id) {
+            event.stopPropagation();
+            if (!confirm("Bu pozisyonu silmek istediğinize emin misiniz? Bu pozisyona yeni başvuru alınmayacaktır.")) return;
+            try {
+                const res = await fetch(`${API_URL}/positions/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadPositions();
+                } else {
+                    alert("Pozisyon silinirken hata oluştu.");
+                }
+            } catch(e) {
+                alert("Bağlantı hatası oluştu.");
+            }
+        }
+
+        async function addPosition() {
+            const titleInput = document.getElementById('pos-title');
+            const skillsInput = document.getElementById('pos-skills');
+            const quotaInput = document.getElementById('pos-quota');
+
+            const title = titleInput.value.trim();
+            const skills = skillsInput.value.trim();
+            const quota = quotaInput.value;
+
+            if(!title || !skills) return alert("Lütfen tüm alanları doldurun.");
+
+            try {
+                const res = await fetch(`${API_URL}/positions/?title=${encodeURIComponent(title)}&skills=${encodeURIComponent(skills)}&quota=${quota}`, { method: 'POST' });
+                if (res.ok) {
+                    hideModal();
+                    loadPositions();
+                    // Form girdilerini temizle
+                    titleInput.value = "";
+                    skillsInput.value = "";
+                    quotaInput.value = "1";
+                } else {
+                    const err = await res.json();
+                    alert("Hata: " + (err.detail || "Pozisyon eklenemedi."));
+                }
+            } catch(e) { 
+                alert("Bağlantı hatası oluştu."); 
+            }
+        }
+
+        async function loadCandidates() {
+            const sortBy = document.getElementById('sort-select').value;
+            try {
+                const res = await fetch(`${API_URL}/candidates/?position=${encodeURIComponent(currentPosition)}&sort_by=${sortBy}`);
+                const data = await res.json();
+                const list = document.getElementById('candidate-list');
+                list.innerHTML = "";
+
+                const filtered = data.data.filter(c => c.status === currentStatusTab);
+
+                if(filtered.length === 0) {
+                    list.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); margin-top: 2rem;">Bu sekmede henüz aday bulunmuyor.</p>`;
+                    return;
+                }
+
+                filtered.forEach(cand => {
+                    let skills = [];
+                    try { skills = JSON.parse(cand.skills); } catch(e) {}
+
+                    let eduList = [];
+                    try { eduList = JSON.parse(cand.education || "[]"); } catch(e) {}
+                    let expList = [];
+                    try { expList = JSON.parse(cand.experience || "[]"); } catch(e) {}
+
+                    let detailsHtml = "";
+                    if (eduList.length > 0 || expList.length > 0) {
+                        detailsHtml = `<div class="cand-details">`;
+                        if (eduList.length > 0) {
+                            detailsHtml += `
+                                <div class="cand-detail-item">
+                                    <strong>🎓 Eğitim:</strong> <span>${eduList.join(', ')}</span>
+                                </div>
+                            `;
+                        }
+                        if (expList.length > 0) {
+                            detailsHtml += `
+                                <div class="cand-detail-item">
+                                    <strong>💼 Deneyim:</strong> <span>${expList.join(', ')}</span>
+                                </div>
+                            `;
+                        }
+                        detailsHtml += `</div>`;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'cand-card animate';
+                    card.innerHTML = `
+                        <div class="score-badge">%${cand.match_score.toFixed(0)}</div>
+                        <div class="cand-name">${cand.name}</div>
+                        <div class="cand-info">
+                            📧 ${cand.email || 'Email yok'}<br>
+                            📱 ${cand.phone || 'Telefon yok'}<br>
+                            📅 ${new Date(cand.created_at).toLocaleString('tr-TR')}
+                        </div>
+                        <div class="cand-skills">
+                            ${skills.map(s => `<span class="skill-tag">${s}</span>`).join('')}
+                        </div>
+                        ${detailsHtml}
+                        <div class="cand-actions">
+                            <button class="btn btn-outline btn-full" onclick="window.open('${API_URL}/static_cvs/${cand.cv_path}')">📄 CV Görüntüle</button>
+                            ${currentStatusTab === 'Beklemede' ? `
+                                <button class="btn btn-success" onclick="acceptCandidate(${cand.id})">Kabul Et</button>
+                                <button class="btn btn-danger" onclick="rejectCandidate(${cand.id})">Reddet</button>
+                            ` : ''}
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function acceptCandidate(id) {
+            if(!confirm("Bu adayı kabul etmek istiyor musunuz? Mail gönderilecektir.")) return;
+            try {
+                const res = await fetch(`${API_URL}/candidates/${id}/accept`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+                loadCandidates();
+            } catch(e) { alert("Hata oluştu."); }
+        }
+
+        async function rejectCandidate(id) {
+            if(!confirm("Bu adayı REDDETMEK ve veritabanından silmek istiyor musunuz? Red maili gönderilecektir.")) return;
+            try {
+                await fetch(`${API_URL}/candidates/${id}`, { method: 'DELETE' });
+                loadCandidates();
+            } catch(e) { alert("Hata oluştu."); }
+        }
+
+        // Init
+        loadPositions();
+
+    </script>
+</body>
+</html>
